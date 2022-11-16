@@ -12,12 +12,10 @@ import (
 
 var (
 	fileName = "test.json"
-	// accessID  = "AKIA44I3APPQLUFIL2PP"
-	// accessKey = "a6HmjfPqNUqI4sYIVBaipkGS9l7G2VWS+UKdqbea"
 
 	cfg1 = &s3.Config{
-		AccessID:  "AKIA44I3APPQHPIPOZSI",
-		AccessKey: "xyT/bMRRYS061zjK5BS2kDEAd7C5s1cNaVWnM8eY",
+		AccessID:  "",
+		AccessKey: "",
 		Region:    "sa-east-1",
 		Bucket:    "portal-test-pato",
 		Endpoint:  "https://s3.sa-east-1.amazonaws.com",
