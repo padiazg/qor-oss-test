@@ -17,6 +17,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/qor/oss"
@@ -52,40 +53,53 @@ type Config struct {
 
 // New initialize S3 storage
 func New(config *Config) *Client {
-	var (
-		sess     *session.Session
-		s3Config *aws.Config
-		// creds    *credentials.Credentials
-	)
-
-	if config.ACL == "" {
-		config.ACL = s3.BucketCannedACLPublicRead
-	}
+	// if config.ACL == "" {
+	// 	config.ACL = s3.BucketCannedACLPublicRead
+	// }
 
 	client := &Client{Config: config}
 
-	s3Config = &aws.Config{
+	if config.RoleARN != "" {
+		sess := session.Must(session.NewSession())
+		creds := stscreds.NewCredentials(sess, config.RoleARN)
+
+		s3Config := &aws.Config{
+			Region:           &config.Region,
+			Endpoint:         &config.S3Endpoint,
+			S3ForcePathStyle: &config.S3ForcePathStyle,
+			Credentials:      creds,
+		}
+
+		client.S3 = s3.New(sess, s3Config)
+		return client
+	}
+
+	s3Config := &aws.Config{
 		Region:           &config.Region,
 		Endpoint:         &config.S3Endpoint,
 		S3ForcePathStyle: &config.S3ForcePathStyle,
-		DisableSSL:       aws.Bool(true),
-	}
-
-	if config.AccessID != "" && config.AccessKey != "" {
-		s3Config.Credentials = credentials.NewStaticCredentials(
-			config.AccessID,
-			config.AccessKey,
-			config.SessionToken,
-		)
+		// LogLevel:         aws.LogLevel(aws.LogDebug),
 	}
 
 	if config.Session != nil {
-		sess = config.Session
-	} else {
-		sess = session.Must(session.NewSession(s3Config))
+		client.S3 = s3.New(config.Session, s3Config)
+		return client
 	}
 
-	client.S3 = s3.New(sess)
+	if config.AccessID == "" && config.AccessKey == "" {
+		// use aws default Credentials
+		// s3Config.Credentials = ec2RoleAwsCreds(config)
+		sess := session.Must(session.NewSession())
+		client.S3 = s3.New(sess, s3Config)
+		return client
+	}
+
+	creds := credentials.NewStaticCredentials(config.AccessID, config.AccessKey, config.SessionToken)
+	if _, err := creds.Get(); err == nil {
+		sess := session.Must(session.NewSession())
+		s3Config.Credentials = creds
+		client.S3 = s3.New(sess, s3Config)
+	}
 
 	return client
 }

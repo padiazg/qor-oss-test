@@ -2,45 +2,42 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 
-	awss3 "github.com/aws/aws-sdk-go/service/s3"
-	"github.com/qor/oss/s3"
+	// "github.com/qor/oss/s3"
 	// "github.com/oss/filesystem"
-	// "github.com/padiazg/qor-oss-test/s3"
+	awss3 "github.com/aws/aws-sdk-go/service/s3"
+	"github.com/padiazg/qor-oss-test/s3"
 )
 
 var (
-	fileName  = "test.json"
-	accessID  = "81QKqhvmrOEEuuUs"
-	accessKey = "TbUMQkkVRLUZayAkMVMIyPWc6Z4ru08o"
-	region    = "us-east-1"
-	bucket    = "bucket"
-	endPoint  = "http://localhost:9000"
+	fileName = "test.json"
+	// accessID  = "AKIA44I3APPQLUFIL2PP"
+	// accessKey = "a6HmjfPqNUqI4sYIVBaipkGS9l7G2VWS+UKdqbea"
+
+	cfg1 = &s3.Config{
+		AccessID:  "AKIA44I3APPQHPIPOZSI",
+		AccessKey: "xyT/bMRRYS061zjK5BS2kDEAd7C5s1cNaVWnM8eY",
+		Region:    "sa-east-1",
+		Bucket:    "portal-test-pato",
+		Endpoint:  "https://s3.sa-east-1.amazonaws.com",
+		ACL:       awss3.BucketCannedACLPrivate,
+		// ACL:              awss3.BucketCannedACLPublicRead,
+		S3ForcePathStyle: true,
+	}
 )
 
 func main() {
-
-	storage := s3.New(&s3.Config{
-		AccessID:         accessID,
-		AccessKey:        accessKey,
-		Region:           region,
-		Bucket:           bucket,
-		S3Endpoint:       endPoint,
-		ACL:              awss3.BucketCannedACLPublicRead,
-		S3ForcePathStyle: true,
-	})
-	// storage := filesystem.New("/tmp")
+	storage := s3.New(cfg1)
 
 	f, err := os.Open(fileName)
 	if err != nil {
-		fmt.Printf("failed to open file %q, %v\n", fileName, err)
+		fmt.Printf("failed to open file %q, %+v\n", fileName, err)
 	}
 
 	// Save a reader interface into storage
 	if _, e := storage.Put(fileName, f); e != nil {
-		fmt.Printf("storage.Put %s\n", e.Error())
+		fmt.Printf("storage.Put: %+v\n", e)
 	}
 
 	// Get file with path
@@ -48,38 +45,38 @@ func main() {
 	// 	fmt.Printf("storage.Get %s\n", e.Error())
 	// }
 
-	// Get object as io.ReadCloser
-	if o, e := storage.GetStream(fileName); e != nil {
-		fmt.Printf("storage.GetStream %s\n", e.Error())
-	} else {
-		localFile, err := os.Create("test-local.json")
-		if err != nil {
-			fmt.Printf("storage.GetStream. Creating local file %s\n", e.Error())
-			return
-		}
+	// // Get object as io.ReadCloser
+	// if o, e := storage.GetStream(fileName); e != nil {
+	// 	fmt.Printf("storage.GetStream %s\n", e.Error())
+	// } else {
+	// 	localFile, err := os.Create("test-local.json")
+	// 	if err != nil {
+	// 		fmt.Printf("storage.GetStream. Creating local file %s\n", e.Error())
+	// 		return
+	// 	}
 
-		if _, err = io.Copy(localFile, o); err != nil {
-			fmt.Printf("storage.GetStream. Saving to local file %s\n", e.Error())
-			return
-		}
-	}
+	// 	if _, err = io.Copy(localFile, o); err != nil {
+	// 		fmt.Printf("storage.GetStream. Saving to local file %s\n", e.Error())
+	// 		return
+	// 	}
+	// }
 
-	// Delete file with path
+	// // Delete file with path
 	// storage.Delete(fileName)
 
 	// List all objects under path
-	if l, e := storage.List("/"); e != nil {
-		fmt.Printf("storage.List %s\n", e.Error())
-	} else {
-		for _, o := range l {
-			fmt.Printf("> %s %s\n", o.Name, o.Path)
-		}
-	}
+	// if l, e := storage.List(""); e != nil {
+	// 	fmt.Printf("storage.List %s\n", e.Error())
+	// } else {
+	// 	for _, o := range l {
+	// 		fmt.Printf("> %s %s\n", o.Name, o.Path)
+	// 	}
+	// }
 
-	// // Get Public Accessible URL (useful if current file saved privately)
-	if u, e := storage.GetURL(fileName); e != nil {
-		fmt.Printf("storage.GetURL %s\n", e.Error())
-	} else {
-		fmt.Printf("%s: %s\n", fileName, u)
-	}
+	// Get Public Accessible URL (useful if current file saved privately)
+	// if u, e := storage.GetURL(fileName); e != nil {
+	// 	fmt.Printf("storage.GetURL %s\n", e.Error())
+	// } else {
+	// 	fmt.Printf("%s: %s\n", fileName, u)
+	// }
 }
